@@ -119,4 +119,4 @@ for f in favorite_measures:
         p.set_xticklabels(rotation=30)
         plt.tight_layout()
         name = 'FI13' + f + '_' + r
-        plt.savefig(r"C:\Users\Amy Thurber\Dropbox (Partners HealthCare)\Experiments\FI13_matlab_out\python_plots\name.png")
+        plt.savefig(r"C:\Users\Amy Thurber\Dropbox (Partners HealthCare)\Experiments\FI13_matlab_out\python_plots\\" + name + ".png")
