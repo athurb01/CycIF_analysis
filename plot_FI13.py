@@ -27,7 +27,8 @@ df = df.merge(design, left_on=['row','column'], right_on=['row','column'])
 
 # assign markers 
 df['marker'] = None
-marker_matrix_rd1 = [
+marker_map = {'rd1':
+    [
     ['Hoechst', 'none', 'p50_CST', 'none'],
     ['Hoechst', 'none', 'RelA_CST', 'none'],
     ['Hoechst', 'none', 'p50_SC', 'RelA_SC'],
@@ -36,8 +37,9 @@ marker_matrix_rd1 = [
     ['Hoechst', 'none', 'JNK_ab', 'none'],
     ['Hoechst', 'none', 'STAT6_CST', 'none'],
     ['Hoechst', 'LAMP1_ab', 'none', 'RelA_ab']
-]
-marker_matrix_rd2 = [
+    ]
+}
+marker_map['rd2'] = [
     ['Hoechst', 'none', 'p50_SC', 'none'],
     ['Hoechst', 'none', 'JNK_ab', 'RelA_ab'],
     ['Hoechst', 'none', 'IRF3_CST', 'IRF1_CST'],
@@ -47,7 +49,7 @@ marker_matrix_rd2 = [
     ['Hoechst', 'none', 'none', 'none'],
     ['Hoechst', 'none', 'none', 'none']
 ]
-marker_matrix_rd3 = [
+marker_map['rd3'] = [
     ['Hoechst', 'p_38', 'p_STAT1', 'p_STAT6'],
     ['Hoechst', 'none', 'p_ERK', 'p_STAT3'],
     ['Hoechst', 'none', 'p_JNK', 'Cytc'],
@@ -59,15 +61,14 @@ marker_matrix_rd3 = [
 ]
 columns = pd.unique(df['column'])
 channels = pd.unique(df['channel'])
+cycle_keys = list(marker_map.keys())
+cycle = {'rd1': 1, 'rd2':2, 'rd3':3}
 
-for c in range(0,8):
-    for ch in range(0,4):
-        idx = (df['column'] == columns[c]) & (df['channel'] == channels[ch]) & (df['round'] == 1)
-        df.loc[idx, 'marker'] = marker_matrix_rd1[c][ch]
-        idx = (df['column'] == columns[c]) & (df['channel'] == channels[ch]) & (df['round'] == 2)
-        df.loc[idx, 'marker'] = marker_matrix_rd2[c][ch]
-        idx = (df['column'] == columns[c]) & (df['channel'] == channels[ch]) & (df['round'] == 3)
-        df.loc[idx, 'marker'] = marker_matrix_rd3[c][ch]
+for r in cycle_keys:
+    for c in range(0,8):
+        for ch in range(0,4):
+            idx = (df['column'] == columns[c]) & (df['channel'] == channels[ch]) & (df['round'] == cycle[r])
+            df.loc[idx, 'marker'] = marker_map[r][c][ch]
 
 # use groupby to get pop statistics of each FOV/marker
 gb = df.groupby(['experiment', 'timepoint', 'well', 'field','round', 'marker',])
@@ -89,7 +90,7 @@ plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.1)
 #plt.savefig(r"C:\Users\Amy Thurber\Dropbox (Partners HealthCare)\Experiments\FI13_matlab_out\python_plots\p50_CST_rd1.png")
 
 # make subplots for each marker
-markers = set(x for l in marker_matrix_rd2 for x in l)
+markers = set(x for l in marker_matrix_rd3 for x in l)
 
 
 sns.set(font_scale=2)
@@ -104,14 +105,18 @@ for m in markers:
 
 #plt.savefig(r"C:\Users\Amy Thurber\Dropbox (Partners HealthCare)\Experiments\FI13_matlab_out\python_plots\bigMess.png")
 
-
+favorite_measures = ['modeNuclei', 'intIntensityNuclei', 'modeCell', 'intIntensityCell']
 # Jeremy's solution
-for r in range(0,3):
-    p = sns.factorplot(
-    x='drug', y='modeNuclei', col='marker', col_wrap=3, hue='drug',
-    kind='strip', jitter=True, size=2.2, aspect=1.5, sharey = False,
-
-    data=popMeans.loc[pd.IndexSlice[:,:,:,:,3,markers],:].reset_index('marker')
-    )
-    p.set_xticklabels(rotation=30)
-    plt.tight_layout()
+for f in favorite_measures:
+    for r in cycle_keys:
+        markers = set(x for l in marker_map[r] for x in l)
+        p = sns.factorplot(
+        x='drug', y= f, col='marker', col_wrap=3, hue='drug',
+        kind='strip', jitter=True, size=2.2, aspect=1.5, sharey = False,
+    
+        data=popMeans.loc[pd.IndexSlice[:,:,:,:,cycle[r],markers],:].reset_index('marker')
+        )
+        p.set_xticklabels(rotation=30)
+        plt.tight_layout()
+        name = 'FI13' + f + '_' + r
+        plt.savefig(r"C:\Users\Amy Thurber\Dropbox (Partners HealthCare)\Experiments\FI13_matlab_out\python_plots\name.png")
